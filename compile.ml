@@ -63,7 +63,7 @@ let arg_to_asm_string (a : arg) : string =
   match a with
   | Const(n) -> sprintf "%d" n
   | _ ->
-     failwith "Other asms not yet implemented"
+     failwith "Other args not yet implemented"
 
 let instruction_to_asm_string (i : instruction) : string =
   match i with
