@@ -8,7 +8,7 @@ type 'a tok =
   | TSym of string * 'a
   | TInt of int * 'a
   | TBool of bool * 'a
-let tok_info t =
+let tok_info (t : 'a tok) : 'a =
   match t with
   | LPAREN x -> x
   | RPAREN x -> x
@@ -19,7 +19,7 @@ let tok_info t =
 
 (* startline, startcol, endline, endcol *)
 type pos = int * int * int * int
-let pos_to_string (startline, startcol, endline, endcol) range =
+let pos_to_string ((startline, startcol, endline, endcol) : pos) (range : bool) : string =
   if range then
     Printf.sprintf "line %d, col %d--line %d, col %d" startline startcol endline endcol
   else
@@ -68,19 +68,22 @@ let sexp_info s =
 exception SexpParseFailure of string
   
 let parse_toks (toks : pos tok list) : pos sexp list =
-  let rec concat_pos (sl1, sc1, _, _) (_, _, el2, ec2) = (sl1, sc1, el2, ec2)
-  and parse_one toks : (pos sexp * pos tok list) =
+  (* Combines two sourc positions into one larger one. *)
+  let concat_pos (sl1, sc1, _, _) (_, _, el2, ec2) = (sl1, sc1, el2, ec2) in
+  (* Takes a token list and produces a single sexp, along with any leftover tokens *)
+  let rec parse_one toks : (pos sexp * pos tok list) =
     match toks with
     | [] -> raise (SexpParseFailure "No tokens to parse")
     | TSym (t, p) :: rest -> (Sym (t, p), rest)
     | TInt (i, p) :: rest -> (Int (i, p), rest)
-    | TBool (b, p) :: rest ->(Bool (b, p), rest)
+    | TBool (b, p) :: rest -> (Bool (b, p), rest)
     | LPAREN p1 :: rest ->
        (match (parse_many rest) with
         | (sexps, RPAREN p2 :: tail) -> (Nest (sexps, concat_pos p1 p2), tail)
         | _ -> raise (SexpParseFailure (Printf.sprintf "Unmatched left paren at %s" (pos_to_string p1 false))))
     | RPAREN p :: rest ->
        raise (SexpParseFailure (Printf.sprintf "Unmatched right paren at %s" (pos_to_string p false)))
+  (* Takes a token list and produces as many sexps as it can, along with any leftover tokens *)
   and parse_many (toks : pos tok list) : (pos sexp list * pos tok list) =
     match toks with
     | [] -> ([], [])
@@ -95,7 +98,7 @@ let parse_toks (toks : pos tok list) : pos sexp list =
         raise (SexpParseFailure (Printf.sprintf "Incomplete sexpression beginning at %s"
                                                 (pos_to_string (tok_info t) false)))
 ;;
-let parse str =
+let parse (str : string) : pos sexp =
   match parse_toks (tokenize str) with
   | [p] -> p
   | _ -> raise (SexpParseFailure "Multiple top-level s-expressions found")

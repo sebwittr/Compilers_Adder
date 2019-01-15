@@ -11,36 +11,38 @@ type ('a, 'b) either =
   | Left of 'a
   | Right of 'b
 
-let either_printer e =
+let either_printer (e : (string, string) either) : string =
   match e with
     | Left(v) -> sprintf "Error: %s\n" v
     | Right(v) -> v
 
                     
 (* Read a file into a string *)
-let string_of_file file_name =
+let string_of_file (file_name : string) : string =
   let inchan = open_in file_name in
   really_input_string inchan (in_channel_length inchan)
 
-let parse_string s = Compile.expr_of_sexp (Sexp.parse s)
+let parse_string (s : string) : pos expr = Compile.expr_of_sexp (Sexp.parse s)
     
-let compile_string_to_string s =
+let compile_string_to_string (s : string) : string =
   let input_program = parse_string s in
   (compile_to_string input_program);;
 
-let compile_file_to_string input_file =
+let compile_file_to_string (input_file : string) : string =
   compile_string_to_string (string_of_file input_file);;
 
-
-let make_tmpfiles name =
+type tempfiles = Unix.file_descr * string (* stdout file and name *)
+               * Unix.file_descr * string (* stderr file and name *)
+               * Unix.file_descr (* stdin file *)
+let make_tmpfiles (name : string) : tempfiles =
   let (null_stdin, _) = pipe() in
   let stdout_name = (temp_file ("stdout_" ^ name) ".out") in
-  let stdin_name = (temp_file ("stderr_" ^ name) ".err") in
+  let stderr_name = (temp_file ("stderr_" ^ name) ".err") in
   (openfile stdout_name [O_RDWR] 0o600, stdout_name,
-   openfile stdin_name [O_RDWR] 0o600, stdin_name,
+   openfile stderr_name [O_RDWR] 0o600, stderr_name,
    null_stdin)
 
-let run p out =
+let run (p : pos expr) (out : string) : (string, string) either =
   let maybe_asm_string =
     try Right(compile_to_string p)
     with Failure s -> 
@@ -86,13 +88,13 @@ let run p out =
     result
 
 
-let test_run program_str outfile expected test_ctxt =
+let test_run (program_str : string) (outfile : string) (expected : string) (test_ctxt : OUnit2.test_ctxt) : unit =
   let full_outfile = "output/" ^ outfile in
   let program = parse_string program_str in
   let result = run program full_outfile in
   assert_equal (Right(expected ^ "\n")) result ~printer:either_printer
 
-let test_err program_str outfile errmsg test_ctxt =
+let test_err (program_str : string) (outfile : string) (errmsg : string) (test_ctxt : OUnit2.test_ctxt) : unit =
   let result =
     try
       let full_outfile = "output/" ^ outfile in

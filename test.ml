@@ -3,10 +3,12 @@ open Runner
 open Printf
 open OUnit2
 
-let t name program expected = name>::test_run program name expected;;
-let te name program expected_err = name>::test_err program name expected_err;;
+let t (name : string) (program : string) (expected : string) : OUnit2.test =
+  name>::test_run program name expected;;
+let te (name : string) (program : string) (expected_err : string) : OUnit2.test =
+  name>::test_err program name expected_err;;
 
-let suite =
+let suite : OUnit2.test =
 "suite">:::
  [te "forty_one" "41" "not yet implemented";
 
