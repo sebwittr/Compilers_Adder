@@ -41,7 +41,7 @@ let tokenize (str : string) : pos tok list =
            in ((TSym (t, (line, col, line, col + tLen))) :: toks, line, col + tLen)
       | Text t ->
          if t = "true" then (TBool (true, (line, col, line, col + 4)) :: toks, line, col + 4)
-         else if t = "false" then (TBool (true, (line, col, line, col + 5)) :: toks, line, col + 5)
+         else if t = "false" then (TBool (false, (line, col, line, col + 5)) :: toks, line, col + 5)
          else
            let tLen = String.length t
            in try ((TInt (int_of_string t, (line, col, line, col + tLen))) :: toks, line, col + tLen) with
