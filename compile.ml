@@ -3,12 +3,15 @@ open Sexp
 
 (* Abstract syntax of (a small subset of) x86 assembly instructions *)
 
+let word_size = 8
+;;
+       
 type reg =
-  | EAX
-  | ESP
+  | RAX
+  | RSP
 
 type arg =
-  | Const of int
+  | Const of Int64.t
   | Reg of reg
   | RegOffset of int * reg (* int is # words of offset *)
 
@@ -39,7 +42,7 @@ type prim1 =
   | Sub1
 
 type 'a expr =
-  | Number of int * 'a
+  | Number of Int64.t * 'a
   | Id of string * 'a
   | Let of (string * 'a expr) list * 'a expr * 'a
   | Prim1 of prim1 * 'a expr * 'a
@@ -48,7 +51,7 @@ type 'a expr =
    Throws a SyntaxError message if there's a problem
  *)
 exception SyntaxError of string
-let expr_of_sexp (s : pos sexp) : pos expr =
+let rec expr_of_sexp (s : pos sexp) : pos expr =
   (* COMPLETE THIS FUNCTION *)
   failwith (sprintf "Converting sexp not yet implemented at pos %s"
                     (pos_to_string (sexp_info s) true))
@@ -64,7 +67,7 @@ let reg_to_asm_string (r : reg) : string =
 
 let arg_to_asm_string (a : arg) : string =
   match a with
-  | Const(n) -> sprintf "%d" n
+  | Const(n) -> sprintf "%Ld" n
   (* COMPLETE THIS FUNCTION *)
   | _ ->
      failwith "Other args not yet implemented"
@@ -103,7 +106,7 @@ let rec compile_env
   match p with
   | Number(n, _) ->
      [
-       IMov(Reg(EAX), Const(n))
+       IMov(Reg(RAX), Const(n))
      ]
   | _ ->
      failwith "Other exprs not yet implemented"

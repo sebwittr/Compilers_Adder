@@ -1,9 +1,11 @@
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
-  FORMAT=aout
+  NASM_FORMAT=elf64
+  CLANG_FORMAT=-m64
 else
 ifeq ($(UNAME), Darwin)
-  FORMAT=macho
+  NASM_FORMAT=macho
+  CLANG_FORMAT=-m64
 endif
 endif
 
@@ -19,10 +21,10 @@ test: compile.ml runner.ml test.ml sexp.ml
 	mv test.native test
 
 output/%.run: output/%.o main.c
-	clang -g -m32 -o $@ main.c $<
+	clang -g $(CLANG_FORMAT) -o $@ main.c $<
 
 output/%.o: output/%.s
-	nasm -f $(FORMAT) -o $@ $<
+	nasm -f $(NASM_FORMAT) -o $@ $<
 
 output/%.s: input/%.adder main
 	./main $< > $@

@@ -6,7 +6,7 @@ type 'a tok =
   | LPAREN of 'a
   | RPAREN of 'a
   | TSym of string * 'a
-  | TInt of int * 'a
+  | TInt of Int64.t * 'a
   | TBool of bool * 'a
 let tok_info (t : 'a tok) : 'a =
   match t with
@@ -44,7 +44,7 @@ let tokenize (str : string) : pos tok list =
          else if t = "false" then (TBool (false, (line, col, line, col + 5)) :: toks, line, col + 5)
          else
            let tLen = String.length t
-           in try ((TInt (int_of_string t, (line, col, line, col + tLen))) :: toks, line, col + tLen) with
+           in try ((TInt (Int64.of_string t, (line, col, line, col + tLen))) :: toks, line, col + tLen) with
               | Failure _ -> (TSym (t, (line, col, line, col + tLen)) :: toks, line, col + tLen)
     )
     ([], 0, 0)
@@ -54,7 +54,7 @@ let tokenize (str : string) : pos tok list =
 
 type 'a sexp =
   | Sym of string * 'a
-  | Int of int * 'a
+  | Int of Int64.t * 'a
   | Bool of bool * 'a
   | Nest of 'a sexp list * 'a
 let sexp_info s =
@@ -68,7 +68,7 @@ let sexp_info s =
 exception SexpParseFailure of string
   
 let parse_toks (toks : pos tok list) : pos sexp list =
-  (* Combines two sourc positions into one larger one. *)
+  (* Combines two source positions into one larger one. *)
   let concat_pos (sl1, sc1, _, _) (_, _, el2, ec2) = (sl1, sc1, el2, ec2) in
   (* Takes a token list and produces a single sexp, along with any leftover tokens *)
   let rec parse_one toks : (pos sexp * pos tok list) =

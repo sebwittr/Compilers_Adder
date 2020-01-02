@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <stdint.h>
 
-extern int our_code_starts_here() asm("our_code_starts_here");
+extern int64_t our_code_starts_here() asm("our_code_starts_here");
 
 int main(int argc, char** argv) {
-  printf("%d\n", our_code_starts_here());
+  printf("%ld\n", our_code_starts_here());
   return 0;
 }
