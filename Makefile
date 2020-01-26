@@ -1,16 +1,16 @@
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
   NASM_FORMAT=elf64
-  CLANG_FORMAT=-m64
+  CLANG_FLAGS=-mstackrealign -m64 -g -fstack-protector-all -Wstack-protector -fno-omit-frame-pointer
 else
 ifeq ($(UNAME), Darwin)
-  NASM_FORMAT=macho
-  CLANG_FORMAT=-m64
+  NASM_FORMAT=macho64
+  CLANG_FLAGS=-mstackrealign -m64 -g -fstack-protector-all -Wstack-protector -fno-omit-frame-pointer
 endif
 endif
 
 PKGS=oUnit,extlib,unix,str
-BUILD=ocamlbuild -r -use-ocamlfind
+BUILD=ocamlbuild -r -use-ocamlfind -cflag -annot
 
 main: main.ml compile.ml runner.ml sexp.ml
 	$(BUILD) -package $(PKGS) main.native
@@ -21,11 +21,12 @@ test: compile.ml runner.ml test.ml sexp.ml
 	mv test.native test
 
 output/%.run: output/%.o main.c
-	clang -g $(CLANG_FORMAT) -o $@ main.c $<
+	clang $(CLANG_FLAGS) -o $@ main.c $<
 
 output/%.o: output/%.s
 	nasm -f $(NASM_FORMAT) -o $@ $<
 
+.PRECIOUS: output/%.s
 output/%.s: input/%.adder main
 	./main $< > $@
 
