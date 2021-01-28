@@ -11,7 +11,7 @@ type reg =
   | RSP
 
 type arg =
-  | Const of Int64.t
+  | Const of int64
   | Reg of reg
   | RegOffset of int * reg (* int is # words of offset *)
 
@@ -42,7 +42,7 @@ type prim1 =
   | Sub1
 
 type 'a expr =
-  | Number of Int64.t * 'a
+  | Number of int64 * 'a
   | Id of string * 'a
   | Let of (string * 'a expr) list * 'a expr * 'a
   | Prim1 of prim1 * 'a expr * 'a

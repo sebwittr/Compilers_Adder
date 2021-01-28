@@ -6,7 +6,7 @@ type 'a tok =
   | LPAREN of 'a
   | RPAREN of 'a
   | TSym of string * 'a
-  | TInt of Int64.t * 'a
+  | TInt of int64 * 'a
   | TBool of bool * 'a
 let tok_info (t : 'a tok) : 'a =
   match t with
@@ -54,7 +54,7 @@ let tokenize (str : string) : pos tok list =
 
 type 'a sexp =
   | Sym of string * 'a
-  | Int of Int64.t * 'a
+  | Int of int64 * 'a
   | Bool of bool * 'a
   | Nest of 'a sexp list * 'a
 let sexp_info s =
