@@ -31,18 +31,8 @@ let compile_file_to_string (input_file : string) : string =
 type tempfiles = Unix.file_descr * string (* stdout file and name *)
                  * Unix.file_descr * string (* stderr file and name *)
                  * Unix.file_descr (* stdin file *)
+
 let make_tmpfiles (name : string) (std_input : string) : tempfiles =
-  let (stdin_read, stdin_write) = pipe() in
-  let stdout_name = (temp_file ("stdout_" ^ name) ".out") in
-  let stderr_name = (temp_file ("stderr_" ^ name) ".err") in
-  Unix.close(stdin_write);
-  (openfile stdout_name [O_RDWR] 0o600, stdout_name,
-   openfile stderr_name [O_RDWR] 0o600, stderr_name,
-   stdin_read)
-
-
-
-let make_tmpfiles (name : string) (std_input : string) =
   let (stdin_read, stdin_write) = pipe() in
   let stdout_name = (temp_file ("stdout_" ^ name) ".out") in
   let stderr_name = (temp_file ("stderr_" ^ name) ".err") in
