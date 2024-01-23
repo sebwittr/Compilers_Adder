@@ -57,16 +57,17 @@ let rec expr_of_sexp (s : pos sexp) : pos expr =
   | Nest (l, p) -> expr_of_sexps l p
 and expr_of_sexps (sexps : pos sexp list) (nest_pos : pos) : pos expr =
   match sexps with
-  | Sym("let", _) :: Nest(bindings, _) :: body :: [] -> Let(bindings_of_sexps bindings, expr_of_sexp body, nest_pos)
+  | Sym("let", _) :: Nest(bindings, p) :: body :: [] -> Let(bindings_of_sexps bindings p, expr_of_sexp body, nest_pos)
   | Sym("add1", _) :: e :: [] -> Prim1(Add1, expr_of_sexp e, nest_pos)
   | Sym("sub1", _) :: e :: [] -> Prim1(Sub1, expr_of_sexp e, nest_pos)
-  | _ -> raise (SyntaxError ("Unexpected expression at " ^ pos_to_string nest_pos false))
-and bindings_of_sexps (sexps : pos sexp list) : (string * pos expr) list =
+  | [] -> raise (SyntaxError ("Unexpected empty expression at " ^ pos_to_string nest_pos false))
+  | _ -> raise (SyntaxError ("Invalid call at " ^ pos_to_string nest_pos false))
+and bindings_of_sexps (sexps : pos sexp list) (p : pos) : (string * pos expr) list =
   match sexps with
-  | [] -> raise (SyntaxError "Unexpected empty bindings at ")
+  | [] -> raise (SyntaxError ("Unexpected empty bindings at " ^ pos_to_string p false)) (* TODO *)
   | Nest([Sym(x, _); e], _) :: [] -> [(x, expr_of_sexp e)]
-  | Nest([Sym(x, _); e], _) :: rest -> (x, expr_of_sexp e) :: bindings_of_sexps rest
-  | e::_ -> raise (SyntaxError ("Unexpected expression in let at " ^ pos_to_string (sexp_info e) false))
+  | Nest([Sym(x, _); e], _) :: rest -> (x, expr_of_sexp e) :: bindings_of_sexps rest p
+  | e::_ -> raise (SyntaxError ("Bad expression in let at " ^ pos_to_string (sexp_info e) false))
 ;;
 
 (* Functions that implement the compiler *)
@@ -132,16 +133,16 @@ let rec compile_env
     (match (find env name) with
      | None -> raise (BindingError ("Unbound identifier " ^ name ^ " at " ^ pos_to_string p false))
      | Some offset -> [IMov (Reg RAX, RegOffset (offset, RSP))])
-  | Let(bindings, e, _) -> compile_let bindings e stack_index env []
+  | Let(bindings, e, p) -> compile_let bindings e stack_index env [] p
   | Prim1(Add1, e, _) -> (compile_env e stack_index env) @ [IAdd (Reg RAX, Const 1L)]
   | Prim1(Sub1, e, _) -> (compile_env e stack_index env) @ [IAdd (Reg RAX, Const (Int64.neg 1L))]
-and compile_let (bindings : (string * pos expr) list) (body : pos expr) (stack_index : int) (env : (string * int) list) (seen : string list) : instruction list =
+and compile_let (bindings : (string * pos expr) list) (body : pos expr) (stack_index : int) (env : (string * int) list) (seen : string list) (let_pos : pos): instruction list =
   match bindings with
   | [] -> compile_env body stack_index env
-  | (name, e) :: rest -> if (List.mem name seen) then raise (BindingError ("Duplicate binding for " ^ name)) else
+  | (name, e) :: rest -> if (List.mem name seen) then raise (BindingError ("Duplicate binding for " ^ name ^ " in let expression at " ^ pos_to_string let_pos false)) else
     (compile_env e stack_index env) @
     [IMov(RegOffset (stack_index, RSP), Reg RAX)] @
-    compile_let rest body (stack_index + 1) ((name, (stack_index + 1)) :: env) (name :: seen)
+    compile_let rest body (stack_index + 1) ((name, (stack_index)) :: env) (name :: seen) let_pos
 ;;
 
 let compile (p : pos expr) : instruction list =
